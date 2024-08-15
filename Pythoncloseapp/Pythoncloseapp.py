@@ -1,6 +1,7 @@
 from PIL import Image
 from PIL import ImageTk
 import tkinter as tk
+from tkinter import ACTIVE, DISABLED, NORMAL, ttk
 import random
 
 
@@ -18,7 +19,7 @@ root.title("Close me.app")
 
 # Set the window size
 root.geometry(window_size)
-
+root.overrideredirect(True)
 var = tk.BooleanVar()
 
 def display_text():
@@ -54,14 +55,35 @@ def display_text():
         label.config(text= "")
 
 def update_counter():
-    
     root.after(800, window_size_increase)
     root.after(800, update_counter)
-    root.lower
 
 def resize_window(x,y):
     window_size = "{}x{}".format(x,y)
     root.geometry(window_size)
+
+def close_button_move(x_dir, y_dir):
+    global num_of_closes
+    global windx0
+    global windy0
+    speed = 1+ num_of_closes/5
+    info = close_button.place_info()
+    cur_x = int(info.get('x'))
+    cur_y = int(info.get('y'))
+    if cur_x + x_dir <= 0:
+        x_dir = x_dir * (-1)
+    if cur_y + y_dir <= 0:
+        y_dir = y_dir * (-1)
+    if cur_y + y_dir >= windy0-20:
+        y_dir = y_dir * (-1)
+    if cur_x + x_dir >= windx0-20:
+        x_dir = x_dir * (-1)
+    new_x = cur_x + x_dir * speed
+    new_y = cur_y + y_dir * speed
+    close_button.place(x = f"{new_x}", y = f"{new_y}")
+    root.after(10, lambda: close_button_move(x_dir,y_dir))
+    
+
 
 def create_new_close_button():
     #creat a new button which is positioned in a random spot, also updates the label
@@ -97,10 +119,12 @@ def on_close():
     global windx0  
     if num_of_closes == 10:
         print("Fine, you win")
-        print("FINAL SCORE: {}/800".format(2000-(windx0 + windy0)))
+        print("FINAL SCORE: {}/800".format(8000-(windx0 + windy0)))
         root.destroy()
     else:
         num_of_closes += 1
+        if num_of_closes == 5:
+            close_button_move(1,1)
         windx0 -= 150 
         windy0 -= 100 
         display_text()
@@ -114,9 +138,11 @@ def open_popup_window():
     global gif_file
     global windy0
     global windx0
+    ymax = abs(windy0-400)
+    xmax = abs(windx0-500)
     new_window = tk.Toplevel(root)
     new_window.overrideredirect(True)
-    new_window.geometry("1000x800+{}+{}".format(random.randint(0,windx0),random.randint(0,windy0)))
+    new_window.geometry("1000x800+{}+{}".format(random.randint(0,xmax),random.randint(0,ymax)))
     new_window.attributes("-topmost", True)
     new_canvas = tk.Canvas(new_window, width=1000, height=700, bg='black')
     new_canvas.pack()
@@ -124,11 +150,41 @@ def open_popup_window():
     close_popup_button = tk.Button(new_window, text = "Begone popup", command = new_window.destroy)
     close_popup_button.pack(pady=10)
     new_window.focus_force
+    
+def button_flash(button):
+    original_colour = button.cget("background")
+    button.config(background = 'green')
+    root.after(400, lambda: button.config(background=original_colour ))
+
+def text_box_entry():
+    user_input = text_box.get()
+    responce_message = tk.Label(root, wraplength = 120, text=f"You said {user_input}, which means nothing to me.")
+    text_box.delete(first = 0, last=len(user_input))
+    
+    if user_input == "Help" or user_input == "help":
+        responce_message = tk.Label(root, wraplength = 120, text="Here is a list of commands: Pedro, highlight closebutton, highlight checkbutton")
+        
+    if user_input == "highlight closebutton" :
+        responce_message = tk.Label(root, wraplength = 120, text="highlighting closebutton")
+        button_flash(close_button)
+        root.after(800, lambda: button_flash(close_button))
+    
+    if user_input == "highlight checkbutton":
+        responce_message = tk.Label(root, wraplength = 120, text="highlighting checkbutton")
+        button_flash(check_button)
+        root.after(800, lambda: button_flash(check_button))
+        
+    if user_input == "Pedro" or user_input == 'pedro':
+        open_popup_window()
+        responce_message = tk.Label(root, wraplength = 50, text="Pedro, pedro, pedro")
+    
+    responce_message.place(x = 10, y = 151)
+
 
 
 # Create a close button
 close_button = tk.Button(root, text="Close", command=on_close, state=tk.DISABLED)
-close_button.pack(pady=20)
+close_button.place(x = windx0/2, y = windy0/4)
 
 # Create a check button
 check_button = tk.Checkbutton(root, text="Really?", command=on_check, variable=var)
@@ -137,6 +193,13 @@ check_button.pack(pady=20)
 # Create a Label widget to display text
 label = tk.Label(root, text="Close me, please.")
 label.place(x = windx0/2, y = windy0/2)
+
+# Create an entry widget
+text_box = tk.Entry(root, text = "Feel free to type things in here")
+text_box.place(x = 10, y = 100)
+# Create a button for the entry widget
+submit_button = tk.Button(root, text="Submit", command = text_box_entry)
+submit_button.place(x = 45, y = 121)
 
 #gif image
 gif_file =r"C:\Users\wbwin\OneDrive\Pictures\pedro-racoon.gif"
