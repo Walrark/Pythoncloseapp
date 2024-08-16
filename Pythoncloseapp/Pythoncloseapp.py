@@ -66,24 +66,26 @@ def close_button_move(x_dir, y_dir):
     global num_of_closes
     global windx0
     global windy0
-    speed = 1+ num_of_closes/5
-    info = close_button.place_info()
-    cur_x = int(info.get('x'))
-    cur_y = int(info.get('y'))
-    if cur_x + x_dir <= 0:
-        x_dir = x_dir * (-1)
-    if cur_y + y_dir <= 0:
-        y_dir = y_dir * (-1)
-    if cur_y + y_dir >= windy0-20:
-        y_dir = y_dir * (-1)
-    if cur_x + x_dir >= windx0-20:
-        x_dir = x_dir * (-1)
-    new_x = cur_x + x_dir * speed
-    new_y = cur_y + y_dir * speed
-    close_button.place(x = f"{new_x}", y = f"{new_y}")
-    root.after(10, lambda: close_button_move(x_dir,y_dir))
-    
-
+    if getattr(close_button, 'tag', None) != "stop":
+        speed = 1+ num_of_closes/5
+        info = close_button.place_info()
+        cur_x = int(info.get('x'))
+        cur_y = int(info.get('y'))
+        if cur_x + x_dir <= 0:
+            x_dir = x_dir * (-1)
+        if cur_y + y_dir <= 0:
+            y_dir = y_dir * (-1)
+        if cur_y + y_dir >= windy0-20:
+            y_dir = y_dir * (-1)
+        if cur_x + x_dir >= windx0-20:
+            x_dir = x_dir * (-1)
+        new_x = cur_x + x_dir * speed
+        new_y = cur_y + y_dir * speed
+        close_button.place(x = f"{new_x}", y = f"{new_y}")
+        root.after(10, lambda: close_button_move(x_dir,y_dir))
+    else:
+        None
+     
 
 def create_new_close_button():
     #creat a new button which is positioned in a random spot, also updates the label
@@ -119,26 +121,32 @@ def on_close():
     global windx0  
     if num_of_closes == 10:
         print("Fine, you win")
-        print("FINAL SCORE: {}/800".format(8000-(windx0 + windy0)))
+        print("FINAL SCORE: {}".format(8000-(windx0 + windy0)*3/2))
         root.destroy()
     else:
         num_of_closes += 1
-        if num_of_closes == 5:
-            close_button_move(1,1)
         windx0 -= 150 
         windy0 -= 100 
         display_text()
-        resize_window(windx0,windy0)
         create_new_close_button()
+        resize_window(windx0,windy0)
         check_button.deselect()
         on_check()
         open_popup_window()
-
+        if num_of_closes == 5:
+            close_button_move(1,1)
+        if num_of_closes in [7,8]:
+            create_button(num_of_closes)
+            close_button.tag = "stop"
+        if num_of_closes == 9:
+            destroy_temp_buttons()
+            close_button.tag = "stop"
+        
 def open_popup_window():
     global gif_file
     global windy0
     global windx0
-    ymax = abs(windy0-400)
+    ymax = abs(windy0-500)
     xmax = abs(windx0-500)
     new_window = tk.Toplevel(root)
     new_window.overrideredirect(True)
@@ -154,7 +162,7 @@ def open_popup_window():
 def button_flash(button):
     original_colour = button.cget("background")
     button.config(background = 'green')
-    root.after(400, lambda: button.config(background=original_colour ))
+    root.after(400, lambda: button.config(background=original_colour))
 
 def text_box_entry():
     user_input = text_box.get()
@@ -180,7 +188,22 @@ def text_box_entry():
     
     responce_message.place(x = 10, y = 151)
 
+def create_button(num_of_buttons):
+    global windx0
+    global windy0
+    i = 0    
+    while i != num_of_buttons:
+        new_button = tk.Button(root, text= "Close", command = None, state= tk.DISABLED)
+        new_button.tag = "temp"
+        xpos = random.randint(0,windx0-20)
+        ypos = random.randint(0,windy0-10)
+        new_button.place(x = xpos, y = ypos)
+        i +=1
 
+def destroy_temp_buttons():
+    for widget in root.winfo_children():
+        if isinstance(widget, tk.Button) and getattr(widget, 'tag', None) == "temp":
+            widget.destroy()
 
 # Create a close button
 close_button = tk.Button(root, text="Close", command=on_close, state=tk.DISABLED)
